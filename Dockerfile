@@ -1,35 +1,25 @@
-FROM node:20-alpine3.21
+# -------- Build Stage --------
+FROM --platform=linux/amd64 node:20-alpine3.21 AS build
 
 WORKDIR /app
 
-COPY  package*.json .
-COPY tsconfig*.json .
-
-RUN npm install
-
+COPY package*.json ./
+COPY tsconfig*.json ./
 COPY . .
 
+RUN npm install
 RUN npm run build
 
-# Serve build with nginx
-# FROM nginx:alpine
-# COPY --from=build /app/build /usr/share/nginx/html
-
-# EXPOSE 5173
-
-# # CMD [ "npm", "run", "dev" ]
-# CMD ["nginx", "-g", "daemon off;"]
-
-##########  Run stage  ##########
+# -------- Production Stage --------
 FROM nginx:alpine
 
-# Clean default nginx static files (optional but tidy)
+# Clean default nginx static files (optional)
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy Vite build to nginx html dir
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Production port
+# Expose port 80 for Render
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
